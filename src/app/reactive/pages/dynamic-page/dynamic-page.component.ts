@@ -1,0 +1,72 @@
+import { Component } from '@angular/core';
+import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+
+@Component({
+  templateUrl: './dynamic-page.component.html',
+  styles: ``
+})
+export class DynamicPageComponent {
+  public myform: FormGroup = this.fb.group(
+    {
+      name: ['',[Validators.required, Validators.min(3)]],
+      favoriteGames: this.fb.array([
+        ['metal gear', Validators.required],
+        ['dead stranding', Validators.required],
+      ])
+    }
+  );
+
+  public newFavorite: FormControl = new FormControl('',[Validators.required])
+  constructor( private fb: FormBuilder){}
+  get favoriteGames (){
+    return this.myform.get('favoriteGames') as FormArray;
+  }
+  isValidField(field: string):boolean | null{
+    return this.myform.controls[field].errors
+    && this.myform.controls[field].touched;
+  }
+
+  isValidFieldInArray(formArray:FormArray, index:number ){
+    return formArray.controls[index].errors
+      &&  formArray.controls[index].touched;
+  }
+  getFielError(field:string):string|null{
+    if( !this.myform.controls[field]  ) return null;
+    const errors =  this.myform.controls[field].errors || {};
+    for (const key of Object.keys(errors) ) {
+      switch(key){
+        case 'required':
+          return 'este campo es requerido';
+          case 'minlength':
+            return `Minimo ${errors['minlength'].requiredLength} caracters`;
+      }
+    }
+    return null;
+  }
+
+  onAddToFavorites():void{
+    if(this.newFavorite.invalid) return;
+    const newGame = this.newFavorite.value;
+    this.favoriteGames.push(
+      this.fb.control(newGame, Validators.required,)
+    );
+    this.newFavorite.reset();
+  }
+
+  onDeleteFavorite(index:number):void{
+    this.favoriteGames.removeAt(index);
+  }
+
+  onSubmit():void {
+
+    if ( this.myform.invalid ) {
+      this.myform.markAllAsTouched();
+      return;
+    }
+
+    console.log(this.myform.value);
+    (this.myform.controls['favoriteGames'] as FormArray ) = this.fb.array([]);
+    this.myform.reset();
+
+  }
+}
